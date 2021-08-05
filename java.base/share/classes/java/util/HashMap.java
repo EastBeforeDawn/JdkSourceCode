@@ -260,6 +260,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     *
+     * 树化阈值
      */
 
     static final int TREEIFY_THRESHOLD = 8;
