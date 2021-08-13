@@ -716,7 +716,9 @@ public abstract class AbstractQueuedSynchronizer
          * to clear in anticipation of signalling.  It is OK if this
          * fails or if status is changed by waiting thread.
          */
+        // 等待状态
         int ws = node.waitStatus;
+        // 小于0 赋值为0
         if (ws < 0)
             node.compareAndSetWaitStatus(ws, 0);
 
@@ -726,13 +728,17 @@ public abstract class AbstractQueuedSynchronizer
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
          */
+        // 头节点的后继节点 准备唤醒的节点
         Node s = node.next;
+        // 没有下一个节点 或者下一个节点的状态不是0
         if (s == null || s.waitStatus > 0) {
             s = null;
+            // 从尾节点向前遍历 找到距离头节点距离最近的正常节点
             for (Node p = tail; p != node && p != null; p = p.prev)
                 if (p.waitStatus <= 0)
                     s = p;
         }
+        // 如果节点不是空 唤醒当前线程
         if (s != null)
             LockSupport.unpark(s.thread);
     }
@@ -917,7 +923,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
+        // 阻塞线程
         LockSupport.park(this);
+        // 唤醒后 返回线程是否被打断过
         return Thread.interrupted();
     }
 
@@ -950,12 +958,13 @@ public abstract class AbstractQueuedSynchronizer
                     // 将node节点设置为头节点 node的前驱节点和线程都设置为空 waitState为默认值0
                     setHead(node);
                     p.next = null; // help GC
-                    // interrupted为false
                     return interrupted;
                 }
-                // 是否可以阻塞 不成功会自旋
+                // 是否可以阻塞 不成功会继续上层for自旋
                 if (shouldParkAfterFailedAcquire(p, node))
-                    // 返回true成功阻塞 interrupted=true 再次唤醒时再次进入循环
+                    // parkAndCheckInterrupt 返回是否被打断过
+                    // interrupted |= 有一个为真则为真
+                    // 被唤醒继续上层for循环
                     interrupted |= parkAndCheckInterrupt();
             }
         } catch (Throwable t) {
@@ -1284,6 +1293,7 @@ public abstract class AbstractQueuedSynchronizer
         // tryAcquire 需要子类自己实现
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            // 如果没有加锁成功 并且打断标志为真 自己打断线程
             selfInterrupt();
     }
 
@@ -1345,8 +1355,10 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryRelease}
      */
     public final boolean release(int arg) {
+        // 释放锁 如果锁是可重入的当state为0时唤醒下一会个线程
         if (tryRelease(arg)) {
             Node h = head;
+            // 已经初始化过 并且 waitStatus被修改过才可以唤醒线程
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;
