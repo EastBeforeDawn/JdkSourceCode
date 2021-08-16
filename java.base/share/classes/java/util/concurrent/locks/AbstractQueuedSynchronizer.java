@@ -828,7 +828,9 @@ public abstract class AbstractQueuedSynchronizer
         node.thread = null;
 
         // Skip cancelled predecessors
+        // 获取节点的前驱节点
         Node pred = node.prev;
+        // 从node当前驱节点开始向前遍历 将非正常状态的节点舍弃掉 遇到正常的节点就停止
         while (pred.waitStatus > 0)
             node.prev = pred = pred.prev;
 
@@ -837,11 +839,13 @@ public abstract class AbstractQueuedSynchronizer
         // or signal, so no further action is necessary, although with
         // a possibility that a cancelled node may transiently remain
         // reachable.
+        // 获取一个正常的节点
         Node predNext = pred.next;
 
         // Can use unconditional write instead of CAS here.
         // After this atomic step, other Nodes can skip past us.
         // Before, we are free of interference from other threads.
+        // 新建的节点设置为异常状态
         node.waitStatus = Node.CANCELLED;
 
         // If we are the tail, remove ourselves.
@@ -968,6 +972,7 @@ public abstract class AbstractQueuedSynchronizer
                     interrupted |= parkAndCheckInterrupt();
             }
         } catch (Throwable t) {
+            // 当线程被打断后会 直接唤醒
             cancelAcquire(node);
             if (interrupted)
                 selfInterrupt();
@@ -981,6 +986,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     private void doAcquireInterruptibly(int arg)
         throws InterruptedException {
+        // 与acquireQueued基本一致
         final Node node = addWaiter(Node.EXCLUSIVE);
         try {
             for (;;) {
@@ -995,6 +1001,7 @@ public abstract class AbstractQueuedSynchronizer
                     throw new InterruptedException();
             }
         } catch (Throwable t) {
+            // 取消异常的节点
             cancelAcquire(node);
             throw t;
         }
